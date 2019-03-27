@@ -43,7 +43,6 @@ type HomeController struct {
 
 func NewHomeController() *HomeController {
 	home := HomeController{}
-	home.Middleware = append(home.Middleware, &middlewares.AuthMiddleware{})
 	return &home
 }
 
