@@ -60,7 +60,7 @@ func (home *HomeController) Get_data(Aqua *aquarius.WebContext) {
 }
 ```
 
-And then register that struct name:
+And then register the controller:
 ```
 func main() {
 	aqua := aquarius.NewAquarius()
