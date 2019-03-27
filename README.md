@@ -31,7 +31,7 @@ func main() {
 
 ```
 
-# Register Controller
+# Register Controller and render HTML
 
 Create file HomeController in folder controllers
 
@@ -43,7 +43,6 @@ type HomeController struct {
 
 func NewHomeController() *HomeController {
 	home := HomeController{}
-	home.Middleware = append(home.Middleware, &middlewares.AuthMiddleware{})
 	return &home
 }
 
@@ -52,12 +51,52 @@ func (home *HomeController) Index(Aqua *aquarius.WebContext) {
 }
 
 func (home *HomeController) Post_data(Aqua *aquarius.WebContext) {
-	Aqua.WriteHTML("")
+	Aqua.WriteJSON(map[string]interface{}{
+		"data": "Success",
+	})
 }
 
 func (home *HomeController) Get_data(Aqua *aquarius.WebContext) {
-	Aqua.WriteHTML("")
+	Aqua.WriteHTML("home/hello_world.html")
 }
+
+```
+
+## Template file
+
+Crate layout.html in folder views:
+```
+{{ define "layout"}}
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta  charset='UTF-8'>
+        <meta name='viewport' content='width=device-width, initial-scale=1.0'>
+        <meta http-equiv='X-UA-Compatible'  content='ie-edge'>
+        <title>title</title>
+    <body>
+    </body>
+        {{ template "body"}}
+    </head>
+</html>
+{{ end }}
+```
+
+Then for page template file, create 2 files
+
+views/home/index
+
+```
+{{ define "body"}}
+    test index
+{{ end }}
+```
+and
+views/home/hello_world.html
+```
+{{ define "body"}}
+    test hello world
+{{ end }}
 ```
 
 And then register the controller:
