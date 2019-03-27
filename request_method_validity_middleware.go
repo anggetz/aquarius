@@ -2,7 +2,6 @@ package aquarius
 
 import (
 	"fmt"
-	"net/http"
 	"strings"
 )
 
@@ -15,34 +14,24 @@ func NewRequestMethodValidity() RequestMethodValidity {
 }
 
 func (methodValidity *RequestMethodValidity) Interceptor(aqua *WebContext) bool {
-
-	if strings.HasPrefix(aqua.Method, "post_") {
-		if aqua.Request.Method != "POST" {
-			http.NotFoundHandler().ServeHTTP(aqua.Writer, aqua.Request)
-			return false
-		}
-
-	} else if strings.HasPrefix(aqua.Method, "get_") {
-		if aqua.Request.Method != "GET" {
-			http.NotFoundHandler().ServeHTTP(aqua.Writer, aqua.Request)
-			return false
-		}
-	}
-
 	return true
 }
 
 func (methodValidity *RequestMethodValidity) BeforeRegisterHandler(aqua *WebContext) {
 	secondUrl := ""
-	if strings.HasPrefix(aqua.Method, "post_") {
-		secondUrl = strings.Replace(aqua.Method, "post_", "", -1)
+	if strings.HasPrefix(aqua.MethodFunc, "post_") {
+		secondUrl = strings.Replace(aqua.MethodFunc, "post_", "", -1)
+		aqua.Method = "POST"
 
-	} else if strings.HasPrefix(aqua.Method, "get_") {
-		secondUrl = strings.Replace(aqua.Method, "get_", "", -1)
-
+	} else if strings.HasPrefix(aqua.MethodFunc, "get_") {
+		secondUrl = strings.Replace(aqua.MethodFunc, "get_", "", -1)
+		aqua.Method = "GET"
 	} else {
-		secondUrl = aqua.Method
+		secondUrl = aqua.MethodFunc
+		aqua.Method = "GET"
 	}
+
+	aqua.PureMethodFunc = secondUrl
 
 	aqua.Url = fmt.Sprintf("/%s/%s", aqua.Controller, secondUrl)
 }

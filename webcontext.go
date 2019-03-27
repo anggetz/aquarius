@@ -16,6 +16,8 @@ type WebContext struct {
 	Writer         http.ResponseWriter
 	Request        *http.Request
 	Controller     string
+	MethodFunc     string
+	PureMethodFunc string
 	Method         string
 	Url            string
 }
@@ -35,7 +37,7 @@ func (aquaWebContext *WebContext) WriteHTML(templatePaths ...string) {
 	fileToParse = append(fileToParse, fullLayoutPath)
 
 	for _, templatePath := range templatePaths {
-		fullViewPath := path.Join(aquaWebContext.AppInfo.ViewsPath, aquaWebContext.Controller, fmt.Sprintf("%s.html", aquaWebContext.Method))
+		fullViewPath := path.Join(aquaWebContext.AppInfo.ViewsPath, aquaWebContext.Controller, fmt.Sprintf("%s.html", aquaWebContext.PureMethodFunc))
 		if templatePath != "" {
 			fullViewPath = path.Join(aquaWebContext.AppInfo.ViewsPath, templatePath)
 		}
