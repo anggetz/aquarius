@@ -21,7 +21,9 @@ func NewApplication(appName string, globalMiddleware []interface{}) Application 
 	}
 
 	requestMethodValidity := NewRequestMethodValidity()
+	dataPayloadMiddleware := NewDataPayloadMiddleware()
 	globalMiddleware = append(globalMiddleware, &requestMethodValidity)
+	globalMiddleware = append(globalMiddleware, &dataPayloadMiddleware)
 
 	return Application{Name: appName, GlobalMiddlewares: globalMiddleware, InterceptorSignal: INTERCEPTOR_RUN}
 }

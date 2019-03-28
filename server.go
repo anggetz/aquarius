@@ -53,11 +53,12 @@ func (Aqua *Aquarius) RegisterApp(app Application) error {
 			url := fmt.Sprintf("/%s/%s", structName, method)
 
 			webContext := WebContext{
-				AppInfo:        &app,
-				Controller:     structName,
-				MethodFunc:     strings.ToLower(method.Name),
-				PureMethodFunc: strings.ToLower(method.Name),
-				Url:            url,
+				AppInfo:          &app,
+				ControllerStruct: structValue,
+				Controller:       structName,
+				MethodFunc:       strings.ToLower(method.Name),
+				PureMethodFunc:   method.Name,
+				Url:              url,
 			}
 
 			// Check middleware
@@ -79,14 +80,14 @@ func (Aqua *Aquarius) RegisterApp(app Application) error {
 				}
 			}
 
-			fmt.Printf("[INFO] Register route /%s/%s \n", structName, webContext.PureMethodFunc)
+			fmt.Printf("[INFO] Register route %s \n", webContext.Url)
 
 			Aqua.MuxRouter.HandleFunc(webContext.Url, func(w http.ResponseWriter, req *http.Request) {
 
 				webContext.Writer = w
 				webContext.Request = req
 
-				fmt.Printf("[INFO] Incoming request /%s/%s \n", structName, webContext.PureMethodFunc)
+				fmt.Printf("[INFO] Incoming request %s \n", webContext.Url)
 
 				for _, interceptor := range interceptorFuncs {
 					returnValues := interceptor.Call([]reflect.Value{reflect.ValueOf(&webContext)})

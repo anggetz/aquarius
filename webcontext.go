@@ -11,23 +11,34 @@ import (
 )
 
 type WebContext struct {
-	AppInfo        *Application
-	ControllerInfo interface{}
-	Writer         http.ResponseWriter
-	Request        *http.Request
-	Controller     string
-	MethodFunc     string
-	PureMethodFunc string
-	Method         string
-	Url            string
+	AppInfo          *Application
+	ControllerInfo   interface{}
+	Writer           http.ResponseWriter
+	Request          *http.Request
+	Data             map[string]interface{}
+	ControllerStruct reflect.Value
+	Controller       string
+	MethodFunc       string
+	PureMethodFunc   string
+	Method           string
+	Url              string
 }
 
-func (aquaWebContext *WebContext) WriteHTML(templatePaths ...string) {
+func (aquaWebContext *WebContext) WriteHTML(data interface{}, templatePaths ...string) {
 	fileToParse := []string{}
 
 	fullLayoutPath := path.Join(aquaWebContext.AppInfo.ViewsPath, "layout.html")
-	if aquaWebContext.AppInfo.Layout != "" {
-		fullLayoutPath = path.Join(aquaWebContext.AppInfo.ViewsPath, aquaWebContext.AppInfo.Layout)
+	controllerLayout := aquaWebContext.ControllerStruct.FieldByName("Layout")
+	if controllerLayout.IsValid() {
+		layoutName := controllerLayout.String()
+		if layoutName != "" {
+			fullLayoutPath = path.Join(aquaWebContext.AppInfo.ViewsPath, layoutName)
+		}
+
+	} else {
+		if aquaWebContext.AppInfo.Layout != "" {
+			fullLayoutPath = path.Join(aquaWebContext.AppInfo.ViewsPath, aquaWebContext.AppInfo.Layout)
+		}
 	}
 
 	if _, err := os.Stat(fullLayoutPath); os.IsNotExist(err) {
@@ -56,7 +67,7 @@ func (aquaWebContext *WebContext) WriteHTML(templatePaths ...string) {
 		return
 	}
 
-	err = tmpl.ExecuteTemplate(aquaWebContext.Writer, "layout", nil)
+	err = tmpl.ExecuteTemplate(aquaWebContext.Writer, "layout", data)
 	if err != nil {
 		http.Error(aquaWebContext.Writer, fmt.Sprintf("Could not execute template file %s", err.Error()), http.StatusInternalServerError)
 		return
@@ -77,4 +88,16 @@ func (aquaWebContext *WebContext) WriteJSON(data interface{}) {
 	}
 
 	aquaWebContext.Writer.Write(j)
+}
+
+func (aquaWebContext *WebContext) GetPayloadData(data interface{}) error {
+	decoder := json.NewDecoder(aquaWebContext.Request.Body)
+
+	err := decoder.Decode(&data)
+	if err != nil {
+		return err
+	}
+
+	return nil
+
 }

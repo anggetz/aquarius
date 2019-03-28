@@ -31,7 +31,15 @@ func (methodValidity *RequestMethodValidity) BeforeRegisterHandler(aqua *WebCont
 		aqua.Method = "GET"
 	}
 
-	aqua.PureMethodFunc = secondUrl
-
+	route := aqua.ControllerStruct.FieldByName("Route")
+	if route.IsValid() {
+		routeInterface := route.Interface()
+		mapRoute := routeInterface.(map[string]interface{})
+		if val, ok := mapRoute[aqua.PureMethodFunc]; ok {
+			aqua.Url = val.(string)
+			return
+		}
+	}
 	aqua.Url = fmt.Sprintf("/%s/%s", aqua.Controller, secondUrl)
+
 }
