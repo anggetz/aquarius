@@ -113,3 +113,29 @@ func main() {
 	aqua.Listen()
 }
 ```
+
+Above code will automatically register all method in HomeController struct :
+The route will be:
+home/data method either POST and GET
+and home/index 
+
+## Routing.
+
+You can modify your own route for each method. 
+
+```
+type HomeController struct {
+	Middleware []interface{}	
+	Route      map[string]interface{}
+}
+
+func NewHomeController() *HomeController {
+	home := HomeController{}	
+	home.Route = map[string]interface{}{
+		"Get_data": "/api/data/{name}",
+	}
+	return &home
+}
+```
+
+The field route must be map[string]interface. Key same as method name and the value must string type.
