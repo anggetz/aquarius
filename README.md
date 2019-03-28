@@ -38,16 +38,15 @@ Create file HomeController in folder controllers
 Copy this code below
 ```
 type HomeController struct {
-	Middleware []interface{}
 }
 
 func NewHomeController() *HomeController {
-	home := HomeController{}
+	home := HomeController{}	
 	return &home
 }
 
 func (home *HomeController) Index(Aqua *aquarius.WebContext) {
-	Aqua.WriteHTML("")
+	Aqua.WriteHTML(nil, "")
 }
 
 func (home *HomeController) Post_data(Aqua *aquarius.WebContext) {
@@ -57,8 +56,13 @@ func (home *HomeController) Post_data(Aqua *aquarius.WebContext) {
 }
 
 func (home *HomeController) Get_data(Aqua *aquarius.WebContext) {
-	Aqua.WriteHTML("home/hello_world.html")
+	Aqua.WriteHTML(struct {
+		Message string
+	}{
+		Message: "Hello Boys",
+	}, "home/hello_world.html", "layout/nav.html")
 }
+
 
 ```
 
