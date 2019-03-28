@@ -116,8 +116,8 @@ func main() {
 
 Above code will automatically register all method in HomeController struct :
 The route will be:
-home/data 
-home/index 
+home/data <br />
+home/index <br />
 
 
 ## Routing.
