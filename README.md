@@ -82,7 +82,7 @@ Crate layout.html in folder views:
 {{ end }}
 ```
 
-Then for page template file, create 2 files
+Create 2 template files
 
 views/home/index
 
