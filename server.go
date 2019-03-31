@@ -5,28 +5,61 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"reflect"
 	"strings"
 
 	"github.com/gorilla/mux"
 )
 
+var Mux = mux.NewRouter()
+
 type Aquarius struct {
-	Server    *http.Server
-	MuxRouter *mux.Router
-	Port      string
-	AppName   string
+	Server *http.Server
+	Port   string
+	Header struct {
+		Origin []string
+	}
+	Static struct {
+		Path string
+		Dir  string
+	}
+	AppName string
 }
 
 func NewAquarius() Aquarius {
 
-	return Aquarius{
-		MuxRouter: mux.NewRouter(),
-	}
+	aquarius := Aquarius{}
+	aquarius.Header.Origin = []string{"*"}
+
+	return aquarius
 }
 func (Aqua *Aquarius) Listen() {
 
-	Aqua.Server = &http.Server{Addr: fmt.Sprintf(":%s", Aqua.Port), Handler: Aqua.MuxRouter}
+	if Aqua.Static.Path != "" {
+
+		Mux.
+			PathPrefix(Aqua.Static.Path).
+			Handler(http.StripPrefix(Aqua.Static.Path, http.FileServer(http.Dir("."+Aqua.Static.Dir))))
+
+	}
+
+	middlewareInner := func(h http.Handler) http.Handler {
+
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+
+			originAcc := r.Host
+
+			if strings.Contains(strings.Join(Aqua.Header.Origin, ","), r.Header.Get("Origin")) {
+				originAcc = r.Header.Get("Origin")
+			}
+			w.Header().Set("Access-Control-Allow-Origin", originAcc)
+
+			h.ServeHTTP(w, r)
+		})
+	}
+
+	Aqua.Server = &http.Server{Addr: fmt.Sprintf(":%s", Aqua.Port), Handler: middlewareInner(Mux)}
+
+	fmt.Printf("[INFO] Starting application: localhost:%s \n", Aqua.Port)
 
 	if err := Aqua.Server.ListenAndServe(); err != http.ErrServerClosed {
 		log.Fatalf("ListenAndServe(): %s", err)
@@ -40,66 +73,6 @@ func (Aqua *Aquarius) StopServer() {
 }
 
 func (Aqua *Aquarius) RegisterApp(app Application) error {
-	for _, handlerStruct := range app.Controllers {
-		structValue := reflect.Indirect(reflect.ValueOf(handlerStruct))
-		structToRegister := reflect.TypeOf(handlerStruct)
-
-		for i := 0; i < structToRegister.NumMethod(); i++ {
-			interceptorFuncs := []reflect.Value{}
-
-			structName := strings.ToLower(strings.Replace(structToRegister.Elem().Name(), "Controller", "", -1))
-			method := structToRegister.Method(i)
-
-			url := fmt.Sprintf("/%s/%s", structName, method)
-
-			webContext := WebContext{
-				AppInfo:          &app,
-				ControllerStruct: structValue,
-				Controller:       structName,
-				MethodFunc:       strings.ToLower(method.Name),
-				PureMethodFunc:   method.Name,
-				Url:              url,
-			}
-
-			// Check middleware
-			middlewareStruct := structValue.FieldByName("Middleware")
-			if middlewareStruct.IsValid() {
-				for _, m := range webContext.AppInfo.GlobalMiddlewares {
-					middlewareStruct = reflect.Append(middlewareStruct, reflect.ValueOf(m))
-				}
-				for n := 0; n < middlewareStruct.Len(); n++ {
-					interceptorFunc := middlewareStruct.Index(n).Elem().MethodByName("Interceptor")
-					if interceptorFunc.IsValid() {
-						interceptorFuncs = append(interceptorFuncs, interceptorFunc)
-					}
-
-					beforeRegisterHandler := middlewareStruct.Index(n).Elem().MethodByName("BeforeRegisterHandler")
-					if beforeRegisterHandler.IsValid() {
-						beforeRegisterHandler.Call([]reflect.Value{reflect.ValueOf(&webContext)})
-					}
-				}
-			}
-
-			fmt.Printf("[INFO] Register route %s \n", webContext.Url)
-
-			Aqua.MuxRouter.HandleFunc(webContext.Url, func(w http.ResponseWriter, req *http.Request) {
-
-				webContext.Writer = w
-				webContext.Request = req
-
-				fmt.Printf("[INFO] Incoming request %s \n", webContext.Url)
-
-				for _, interceptor := range interceptorFuncs {
-					returnValues := interceptor.Call([]reflect.Value{reflect.ValueOf(&webContext)})
-					if !returnValues[0].Bool() {
-						return
-					}
-				}
-
-				reflect.ValueOf(handlerStruct).MethodByName(method.Name).Call([]reflect.Value{reflect.ValueOf(&webContext)})
-			}).Methods(webContext.Method)
-		}
-	}
 
 	return nil
 }

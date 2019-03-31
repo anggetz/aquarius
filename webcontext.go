@@ -8,6 +8,7 @@ import (
 	"os"
 	"path"
 	"reflect"
+	"strings"
 )
 
 type WebContext struct {
@@ -19,7 +20,6 @@ type WebContext struct {
 	ControllerStruct reflect.Value
 	Controller       string
 	MethodFunc       string
-	PureMethodFunc   string
 	Method           string
 	Url              string
 }
@@ -48,7 +48,8 @@ func (aquaWebContext *WebContext) WriteHTML(data interface{}, templatePaths ...s
 	fileToParse = append(fileToParse, fullLayoutPath)
 
 	for _, templatePath := range templatePaths {
-		fullViewPath := path.Join(aquaWebContext.AppInfo.ViewsPath, aquaWebContext.Controller, fmt.Sprintf("%s.html", aquaWebContext.PureMethodFunc))
+		defViewPath := strings.Split(aquaWebContext.Url, "/")
+		fullViewPath := path.Join(aquaWebContext.AppInfo.ViewsPath, aquaWebContext.Controller, fmt.Sprintf("%s.html", defViewPath[len(defViewPath)-1]))
 		if templatePath != "" {
 			fullViewPath = path.Join(aquaWebContext.AppInfo.ViewsPath, templatePath)
 		}
@@ -100,4 +101,32 @@ func (aquaWebContext *WebContext) GetPayloadData(data interface{}) error {
 
 	return nil
 
+}
+
+func (AquaWebContext *WebContext) MethodValidity() {
+	secondUrl := ""
+	method := strings.ToLower(AquaWebContext.MethodFunc)
+	if strings.HasPrefix(method, "post_") {
+		secondUrl = strings.Replace(method, "post_", "", -1)
+		AquaWebContext.Method = "POST"
+
+	} else if strings.HasPrefix(method, "get_") {
+		secondUrl = strings.Replace(method, "get_", "", -1)
+		AquaWebContext.Method = "GET"
+	} else {
+		secondUrl = method
+		AquaWebContext.Method = "GET"
+	}
+
+	route := AquaWebContext.ControllerStruct.FieldByName("Route")
+	if route.IsValid() {
+		routeInterface := route.Interface()
+		mapRoute := routeInterface.(map[string]interface{})
+		if val, ok := mapRoute[AquaWebContext.MethodFunc]; ok {
+			AquaWebContext.Url = val.(string)
+			return
+		}
+	}
+
+	AquaWebContext.Url = fmt.Sprintf("/%s/%s", AquaWebContext.Controller, secondUrl)
 }

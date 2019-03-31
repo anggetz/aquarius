@@ -21,10 +21,10 @@ func main() {
 	aqua.Port = "8089"
 
 	aquaApp := aquarius.NewApplication("NewApp", nil)
-	aquaApp.ViewsPath = "views"
-	aquaApp.Layout = "layout/layout.html"
+	aquaApp.ViewsPath = "views" // set your view path
+	aquaApp.Layout = "layout/layout.html" // set your layout path
 
-	aqua.MuxRouter.HandleFunc("/halo/{id}", myHandler)
+	aquarius.Mux.HandleFunc("/halo/{id}", myHandler)
 	aqua.RegisterApp(aquaApp)
 	aqua.Listen()
 }
@@ -63,7 +63,6 @@ func (home *HomeController) Get_data(Aqua *aquarius.WebContext) {
 	}, "home/hello_world.html", "layout/nav.html")
 }
 
-
 ```
 
 ## Template file
@@ -80,8 +79,8 @@ Crate layout.html in folder views:
         <title>title</title>
     <body>
     </body>
-        {{ template "body"}}
-    </head>
+        {{ template "body" .}}
+    </head>    
 </html>
 {{ end }}
 ```
@@ -92,7 +91,7 @@ views/home/index
 
 ```
 {{ define "body"}}
-    test index
+    hello index  {{.Message}}   
 {{ end }}
 ```
 and
@@ -119,7 +118,7 @@ func main() {
 ```
 
 Above code will automatically register all method in HomeController struct :
-The route will be:
+The route will be: <br />
 home/data <br />
 home/index <br />
 
